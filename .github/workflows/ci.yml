@@ -77,3 +77,17 @@ jobs:
 
          # Create prod-only package.json (no devDependencies). This does NOT install deps.
          (cd "$STAGING" && npm pkg delete devDependencies || true)
+
+          # Zip stays inside the workspace for reliable artifact upload
+         TS="$(date +%Y%m%d-%H%M%S)"
+         SHORT_SHA="${GITHUB_SHA::7}"
+         ZIP_NAME="deployment-package-${SHORT_SHA}-${TS}.zip"
+         (cd "$GITHUB_WORKSPACE" && zip -r "$ZIP_NAME" "deployment-package")
+         echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+
+     - name: Upload deployment package artifact
+       uses: actions/upload-artifact@v4
+       with:
+         name: deployment-package-node-${{ matrix.node-version }}-${{ github.run_number }}
+         path: ${{ env.ZIP_NAME }}
+         retention-days: 90
